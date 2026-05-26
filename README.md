@@ -1,0 +1,365 @@
+# AIAvatarStackChan
+
+A framework for building voice-interactive AI robot with [StackChan (M5StackChan)](https://docs.m5stack.com/ja/StackChan) and [AIAvatarKit](https://github.com/uezo/aiavatarkit).
+
+Turn your StackChan into a cute, smart buddy that talks with you, shows emotions, moves around, and even sees the world around it.
+
+
+## ✨ Features
+
+- 🗣️ **Voice conversation** — Ultra-low-latency streaming for smooth, natural conversations. Push-to-talk is also supported.
+- 🧱 **Swappable building blocks** — STT, LLM, and TTS are all pluggable on the server side, so your robot can keep up with the latest and greatest.
+- 🥰 **Expressive avatar** — Show a character face with multiple expressions, automatic blinking, and mouth animation synced to speech(lip sync).
+- 👀 **Vision** — When the server needs visual context, StackChan snaps a photo and sends it along for multimodal conversations.
+- 🦞 **AI agent integration** — Hook into agent harness systems like [OpenClaw](https://github.com/uezo/openclaw) to give your robot real-world skills that grow over time.
+
+
+## 📦 Setup
+
+AIAvatarStackChan runs as a pair:
+
+- AIAvatarKit server
+- StackChan firmware built with this framework
+
+### Server
+
+The server resources are in `examples/server`. Start by navigating there.
+
+```sh
+cd examples/server
+```
+
+Install requirements.
+
+```sh
+pip install -r requirements.txt
+```
+
+Set your OpenAI API key.
+
+```sh
+export OPENAI_API_KEY=sk-...
+```
+
+Start the server.
+
+```sh
+python -m uvicorn run:app --host 0.0.0.0 --port 8000
+```
+
+> **Note:** If you want your robot to speak Japanese, make sure [VOICEVOX](https://voicevox.hiroshiba.jp) is running before you start the server.
+
+For server-side details, see [uezo/aiavatarkit](https://github.com/uezo/aiavatarkit).
+
+### StackChan
+
+Create a PlatformIO project and copy the example into it.
+
+```sh
+cp -r examples/stackchan/basic/src /path/to/your/project/
+cp examples/stackchan/basic/platformio.ini /path/to/your/project/
+```
+
+Copy one of the sample configs as `config.json` and fill in your Wi-Fi credentials under `wifi_networks`.
+
+```sh
+cp config.sample.ja.json config.json   # or config.sample.json for English
+```
+
+Put `config.json` and at least one avatar image (`/avatar/neutral.png`) on the SD card, then insert it into your StackChan. You can use the sample images in `examples/avatar` to test it quickly.
+
+Build and upload the firmware. Once StackChan boots and the 🛜Wi-Fi icon turns green, you're connected to the server — start chatting!
+
+
+## 🎮 Usage
+
+Here are the default controls built into the firmware.
+
+- 🎙️ Toggles mute/unmute. While muted, long-press the screen to use push-to-talk.
+- 🛜 Opens the Wi-Fi network picker and lets you toggle the WebSocket connection on/off.
+- 🔈 No visible button, but tapping the lower-left corner of the screen cycles through speaker volume levels.
+- 👀 Say something like "look at this" and StackChan will automatically snap a photo, send it to the server, and respond based on what it sees.
+- 👋 Pet the top of StackChan's body and it will react with a cute response.
+- ☝️ Swipe up on the screen to hide the clock and status icons. Swipe down from the top edge to bring them back.
+
+
+## ⚙️ Configuration
+
+`config.json` can define the following fields:
+
+- `wifi_networks` (array): Wi-Fi profiles shown in the Wi-Fi menu. Up to 5 entries
+  - `name` (string): menu display name
+  - `ssid` (string): Wi-Fi SSID. Entries with an empty SSID are ignored
+  - `pass` (string): Wi-Fi password
+- `ws_host` (string): AIAvatarKit WebSocket server host
+- `ws_port` (number): AIAvatarKit WebSocket server port
+- `ws_path` (string): AIAvatarKit WebSocket server path
+- `user_id` (string): user ID sent when connecting to the WebSocket server
+- `channel` (string): channel name sent when connecting to the WebSocket server
+- `timezone` (string): TZ string used for NTP time configuration
+- `mic_sample_rate` (number): microphone input sample rate
+- `mic_magnification` (number): microphone input gain setting
+- `mic_buffer_samples` (number): microphone samples sent per frame. 1 to 2048
+- `vad_threshold_db` (number): voice activity detection threshold in dB
+- `playback_queue_depth` (number): audio playback queue depth
+- `rbuf_samples` (number): legacy setting. Used only when `playback_queue_depth` is not set, converted in 512-sample units
+- `start_threshold` (number): number of queued samples required before playback starts
+- `drain_timeout_ms` (number): playback queue drain timeout in ms
+- `speaker_volume` (number): initial speaker volume. 0 to 255
+- `volume_levels` (array): volume values cycled by the volume button. 2 to 8 entries, each 0 to 255
+- `audio_task_stack_size` (number): stack size for audio tasks
+- `audio_task_core` (number): CPU core assigned to audio tasks
+- `ws_task_stack_size` (number): stack size for the WebSocket task
+- `ws_task_core` (number): CPU core assigned to the WebSocket task
+- `ws_reconnect_interval_ms` (number): WebSocket reconnect interval in ms
+- `mic_tx_slow_backoff_ms` (number): delay in ms when microphone transmission is congested
+- `mic_tx_fail_backoff_ms` (number): delay in ms after microphone transmission fails
+- `keepalive_interval_ms` (number): keepalive send interval in ms
+- `display_rotation` (number): display rotation setting
+- `display_brightness` (number): display brightness
+- `status_overlay_enabled` (boolean): whether to show the status overlay
+- `vision_preview_duration_ms` (number): camera preview duration for vision requests in ms. Default: `2000`
+- `accepted_led_color` (array): RGB color for the accepted-state LED. Example: `[0, 168, 0]`
+- `tool_led_color` (array): RGB color for the tool-running LED. Example: `[140, 0, 140]`
+- `ptt_max_seconds` (number): maximum Push-to-Talk recording length in seconds
+- `ptt_min_seconds` (number): minimum Push-to-Talk recording length sent to the server
+- `ptt_hold_threshold_ms` (number): hold duration in ms required to start Push-to-Talk
+- `pitch_home` (number): StackChan pitch home angle
+- `stackchan_auto_angle_sync` (boolean): whether to synchronize StackChan posture from the physical servo position
+- `nade_invoke_prompt` (string): prompt sent when StackChan touch/nade is detected
+- `vision_invoke_prompt` (string): prompt sent with camera images
+- `debug_log` (boolean): whether to output debug logs
+
+If `stackchan_auto_angle_sync` causes sudden servo jumps on your hardware, set it to `false`.
+
+
+## 🧩 Hooks and Callbacks
+
+Use callbacks on `AIAvatar` to add behavior without changing the framework internals.
+
+Public user callbacks:
+
+- `avatar.onSpeechDetected(aiavatar::SpeechDetectedCallback cb)`
+  - Signature: `void (*)()`
+  - Called when local microphone audio crosses the VAD threshold while the mic is unmuted, the WebSocket is connected, and the server is not processing. Calls are throttled to about once every 300 ms.
+- `avatar.onNade(aiavatar::NadeCallback cb)`
+  - Signature: `void (*)()`
+  - Called after StackChan touch/nade is detected. The built-in nade prompt is still queued before the user callback runs.
+- `avatar.onStart(aiavatar::TextCallback cb)`
+  - Signature: `void (*)(const char* text)`
+  - Called when the server starts a response. `text` is the request text reported by the server when available.
+- `avatar.onFinal(aiavatar::FinalTextCallback cb)`
+  - Signature: `void (*)(const char* responseText, const char* voiceText)`
+  - Called when the server sends final text metadata. `responseText` is the final response text, and `voiceText` is the text used for voice output when available.
+- `avatar.onToolCall(aiavatar::ToolCallCallback cb)`
+  - Signature: `void (*)(const char* toolName)`
+  - Called when the server reports a tool call. Built-in LED/OpenClaw effects run first, then the user callback runs.
+- `avatar.onAccepted(aiavatar::SimpleCallback cb)`
+  - Signature: `void (*)()`
+  - Called when the server accepts a user input/request. Built-in playback interruption and accepted LED effects run first.
+- `avatar.onOverlay(aiavatar::ScreenOverlayCallback cb)`
+  - Signature: `void (*)(LGFX_Sprite* canvas)`
+  - Called during display rendering so user code can draw on the shared canvas. Built-in visual effects, status overlay, and OpenClaw overlay are drawn before this callback; system UI is drawn after it.
+
+Example:
+
+```cpp
+static void onToolCall(const char* toolName) {
+    Serial.printf("tool: %s\n", toolName ? toolName : "");
+}
+
+static void drawOverlay(LGFX_Sprite* canvas) {
+    canvas->setTextColor(TFT_WHITE);
+    canvas->drawString("custom", 8, 8);
+}
+
+void setup() {
+    // ...
+    avatar.onToolCall(onToolCall);
+    avatar.onOverlay(drawOverlay);
+    avatar.begin(config);
+}
+```
+
+Keep callbacks short and non-blocking. Long work should be moved to your own task or handled asynchronously.
+
+`WebSocketClient`, `MotionController`, and `ScreenRenderer` also expose lower-level callback setters, but `AIAvatar::begin()` uses those internally. User code should prefer the `AIAvatar` callbacks above so it does not replace framework wiring.
+
+
+## ⚡️ Event-Driven Speech
+
+StackChan can speak in response to device-side events instead of waiting for user speech.
+
+Use this when a local sensor, button, timer, or application event should make StackChan start a response. Internally, this is implemented by building a prompt on the device and sending it to the server as an `invoke` request. The built-in nade flow uses the same mechanism.
+
+Public invoke APIs:
+
+- `avatar.websocket().sendInvoke(const char* text)`: sends a text-only invoke request.
+- `avatar.websocket().sendInvokeWithImage(const char* text, const char* imageDataUrl)`: sends a text prompt with an image file URL or data URL.
+- `avatar.websocket().sendInvokeWithAudio(const int16_t* pcmData, size_t sampleCount)`: sends recorded PCM audio as an invoke request.
+
+Example:
+
+```cpp
+static aiavatar::AIAvatar avatar;
+static bool sensorWasActive = false;
+
+void loop() {
+    avatar.update();
+
+    bool sensorActive = readYourSensor();
+    if (sensorActive && !sensorWasActive && avatar.isConnected()) {
+        struct tm ti;
+        time_t now = time(nullptr);
+        localtime_r(&now, &ti);
+
+        char prompt[512];
+        snprintf(prompt, sizeof(prompt),
+                 "$A local sensor was triggered. React with one short phrase.\n\n"
+                 "Current date and time: %04d-%02d-%02d %02d:%02d:%02d",
+                 ti.tm_year + 1900, ti.tm_mon + 1, ti.tm_mday,
+                 ti.tm_hour, ti.tm_min, ti.tm_sec);
+
+        avatar.websocket().sendInvoke(prompt);
+    }
+
+    sensorWasActive = sensorActive;
+    delay(1);
+}
+```
+
+Keep invoke triggers edge-based or rate-limited. Sending an invoke every loop iteration will flood the server queue.
+
+
+## 🎛️ Virtual Buttons
+
+CoreS3 has no physical front buttons, so the framework provides virtual touch areas.
+
+Default actions:
+
+- Virtual Button A: lower-left touch area, volume cycle
+- Virtual Button B: no action
+- Virtual Button C: no action
+
+For devices with physical buttons, disable virtual buttons and forward clicks yourself:
+
+```cpp
+avatar.systemUI().setVirtualButtonsEnabled(false);
+
+if (M5.BtnA.wasClicked()) {
+    avatar.systemUI().runButtonAction(aiavatar::ButtonId::A);
+}
+```
+
+Available actions:
+
+- `ButtonAction::None`
+- `ButtonAction::VolumeCycle`
+- `ButtonAction::Stop`
+- `ButtonAction::WebSocketToggle`
+- `ButtonAction::MicToggle`
+
+
+## 🛠️ Customization
+
+You can add project-specific behavior directly in `main.cpp`, or keep it in a separate application module.
+
+`examples/stackchan/custom` shows the module-based approach. It reads temperature and humidity from [Unit ENV III](https://docs.m5stack.com/en/unit/envIII) and draws the values on the screen.
+
+The custom behavior is isolated in `UserApp.cpp` / `UserApp.h`. `main.cpp` creates the `UserApp` instance, calls `userApp.begin(avatar)` during setup, and calls `userApp.update()` from the main loop.
+
+Use this example as a starting point for app-specific sensors, overlays, callbacks, and event-driven speech.
+
+
+## 🤿 Architecture Deep Dive
+
+```mermaid
+graph TD;
+    MAIN[Main];
+    CONFIG[Config];
+    AVATAR[AIAvatar];
+    USERAPP[UserApp];
+    MIC[MicrophoneInput];
+    WS[WebSocketClient];
+    SPEAKER[SpeakerOutput];
+    DISPLAY[ScreenRenderer];
+    FACE[FaceController];
+    MOTION[MotionController];
+    LED[LedController];
+    UI[SystemUIController];
+    STATUS[StatusOverlay];
+    EFFECTS[VisualEffects];
+    CAMERA[CameraController];
+    OPENCLAW[OpenClawEffects];
+    STACKCHAN[StackChanHardware];
+    CONVERTER[AudioConverter];
+    HARDWARE[HardwareAdapter];
+    MAIN --> CONFIG;
+    MAIN --> AVATAR;
+    MAIN --> USERAPP;
+    USERAPP --> AVATAR;
+    CONFIG --> AVATAR;
+    AVATAR --> MIC;
+    AVATAR --> WS;
+    AVATAR --> SPEAKER;
+    AVATAR --> DISPLAY;
+    AVATAR --> FACE;
+    AVATAR --> MOTION;
+    AVATAR --> LED;
+    AVATAR --> UI;
+    AVATAR --> STATUS;
+    AVATAR --> EFFECTS;
+    AVATAR --> CAMERA;
+    AVATAR --> OPENCLAW;
+    AVATAR --> STACKCHAN;
+    WS --> CONVERTER;
+    FACE --> DISPLAY;
+    MOTION --> HARDWARE;
+    LED --> HARDWARE;
+    STACKCHAN --> HARDWARE;
+    UI --> STATUS;
+    OPENCLAW --> LED;
+    OPENCLAW --> DISPLAY;
+```
+
+`AIAvatar` is the central orchestrator. It owns the audio pipeline, WebSocket connection, display rendering, face control, motion control, LEDs, system UI, and user callbacks.
+
+| Module | Role |
+| --- | --- |
+| `Config` | Loads `/config.json` from the SD card and provides runtime settings. |
+| `MicrophoneInput` | Captures PCM audio from CoreS3 and queues frames for upload. |
+| `WebSocketClient` | Sends microphone frames and invoke requests, then receives server events and audio chunks. |
+| `SpeakerOutput` | Buffers and plays returned PCM audio. |
+| `ScreenRenderer` | Owns the display canvas and calls overlay rendering hooks. |
+| `FaceController` | Handles expressions, blinking, and lip-sync state. |
+| `MotionController` | Drives StackChan head motion and nade motion sequences. |
+| `LedController` | Drives StackChan LED feedback. |
+| `SystemUIController` | Handles virtual buttons, Wi-Fi selection UI, and built-in button actions. |
+| `StatusOverlay` | Draws connection, Wi-Fi, battery, volume, and microphone status. |
+| `VisualEffects` | Draws transient UI effects such as voice detection. |
+| `CameraController` | Captures camera images for vision requests. |
+| `OpenClawEffects` | Adds optional OpenClaw-specific LED and screen effects. |
+| `HardwareAdapter` | Abstracts hardware-specific motion and LED operations. |
+| `StackChanHardware` | Implements `HardwareAdapter` for StackChan hardware. |
+| `AudioConverter` | Optional encoder/decoder hook used by `WebSocketClient`. |
+| `UserApp` | Project-specific extension point used by the custom example for sensors, overlays, callbacks, and app logic. |
+
+The hardware-dependent pieces are isolated behind `HardwareAdapter`, so the core voice/avatar flow can still run without StackChan motion, touch, LEDs, or camera.
+
+
+## 👻 Known Issues
+
+We are aware of the following issues. Contributions are very welcome if you can help fix them.✨🙏✨
+
+- Servo instability: The head may occasionally jerk left or drop downward. This may vary from unit to unit. Setting `stackchan_auto_angle_sync` to `false` in `config.json` can solve it, but motion becomes less responsive.
+- Arduino IDE support: We would like to support Arduino IDE and similar environments so beginners (like me) can use this project more easily.
+
+
+## ❤️ Thanks
+
+First and foremost, huge respect and heartfelt thanks to all the creators who brought StackChan to life and have built such a wonderful community around it. We also want to thank the M5Stack team for making StackChan more accessible to everyone by turning it into a product.
+
+
+## ⚖️ License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

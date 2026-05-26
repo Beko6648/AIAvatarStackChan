@@ -30,3 +30,16 @@
 *.exe
 *.out
 *.app
+
+.DS_Store
+.vscode
+.pio
+*.code-workspace
+
+examples/stackchan/kuroha
+.venv
+
+__pycache__
+recorded_voices
+ttscache
+*.db

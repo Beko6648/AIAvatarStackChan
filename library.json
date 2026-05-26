@@ -1,0 +1,54 @@
+{
+  "$schema": "https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/schema/library.json",
+  "name": "AIAvatarStackChan",
+  "version": "0.1.0",
+  "description": "A framework for building voice-interactive AI robot with StackChan and AIAvatarKit.",
+  "keywords": [
+    "ai",
+    "gpt",
+    "avatar",
+    "m5stack",
+    "cores3",
+    "stackchan",
+    "stack-chan",
+    "voice"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uezo/AIAvatarStackChan.git"
+  },
+  "authors": [
+    {
+      "name": "uezo",
+      "maintainer": true
+    }
+  ],
+  "license": "MIT",
+  "frameworks": "arduino",
+  "platforms": "espressif32",
+  "headers": "AIAvatarStackChan.h",
+  "dependencies": {
+    "m5stack/M5Unified": "^0.2.15",
+    "bblanchon/ArduinoJson": "^7.0.0",
+    "links2004/WebSockets": "*",
+    "StackChan-BSP": "https://github.com/m5stack/StackChan-BSP.git#1.0.1"
+  },
+  "export": {
+    "exclude": [
+      ".pio",
+      ".vscode",
+      "*.code-workspace",
+      "examples/stackchan/kuroha"
+    ]
+  },
+  "build": {
+    "srcDir": "src",
+    "includeDir": "src",
+    "flags": [
+      "-std=gnu++17"
+    ],
+    "unflags": [
+      "-std=gnu++11"
+    ]
+  }
+}
