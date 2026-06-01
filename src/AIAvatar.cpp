@@ -63,7 +63,14 @@ bool AIAvatar::useStackChan() {
 }
 
 bool AIAvatar::begin(const Config& config) {
+    ResourceProvider resources;
+    resources.useSD(true);
+    return begin(config, resources);
+}
+
+bool AIAvatar::begin(const Config& config, const ResourceProvider& resources) {
     s_instance = this;
+    defaultResources_ = resources;
     config_ = config;
     volumeLevelIndex_ = nearestVolumeLevel(config_.speakerVolume);
     volume_ = config_.volumeLevels[volumeLevelIndex_];
@@ -78,6 +85,7 @@ bool AIAvatar::begin(const Config& config) {
         return false;
     }
     speaker_.setVolume(volume_);
+    display_.setResourceProvider(&defaultResources_);
     if (!display_.begin(config_.displayRotation, config_.displayBrightness)) {
         Serial.println("[AIAvatar] display init failed");
     } else if (!face_.begin(display_)) {
@@ -519,6 +527,10 @@ void AIAvatar::handleVisionRequest() {
     bool ok = ws_.sendInvokeWithImage(config_.visionInvokePrompt, dataUrl);
     free(dataUrl);
     Serial.printf("[Vision] invoke %s\n", ok ? "sent" : "failed");
+}
+
+bool AIAvatar::invokeText(const char* text) {
+    return queueInvokeText(text);
 }
 
 bool AIAvatar::queueInvokeText(const char* text) {

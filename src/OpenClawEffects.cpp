@@ -1,7 +1,6 @@
 #include "OpenClawEffects.h"
 
 #include <Arduino.h>
-#include <SD.h>
 #include <cstring>
 
 namespace aiavatar {
@@ -91,14 +90,10 @@ void OpenClawEffects::loadSprites() {
 
     int w = display_->width();
     int h = display_->height();
-    if (SD.exists("/avatar/claw_01.png")) {
-        sprite01_ = display_->loadSprite(
-            "/avatar/claw_01.png", w, h, ScreenRenderer::kTransparentColor);
-    }
-    if (SD.exists("/avatar/claw_02.png")) {
-        sprite02_ = display_->loadSprite(
-            "/avatar/claw_02.png", w, h, ScreenRenderer::kTransparentColor);
-    }
+    sprite01_ = display_->loadSprite(
+        "/avatar/claw_01.png", w, h, ScreenRenderer::kTransparentColor);
+    sprite02_ = display_->loadSprite(
+        "/avatar/claw_02.png", w, h, ScreenRenderer::kTransparentColor);
 }
 
 void OpenClawEffects::updateLed() {

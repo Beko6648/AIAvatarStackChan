@@ -4,13 +4,25 @@
 
 namespace aiavatar {
 
+class ResourceProvider;
+
 using ScreenOverlayCallback = void (*)(LGFX_Sprite* canvas);
+
+enum class ImageFitMode : uint8_t {
+    Contain = 0,
+    Cover,
+};
 
 class ScreenRenderer {
 public:
     ScreenRenderer();
 
     bool begin(uint8_t rotation = 1, uint8_t brightness = 128);
+    bool setRotation(uint8_t rotation);
+    uint8_t rotation() const { return rotation_; }
+    void setResourceProvider(ResourceProvider* resources) { resources_ = resources; }
+    void setImageFitMode(ImageFitMode mode) { imageFitMode_ = mode; }
+    ImageFitMode imageFitMode() const { return imageFitMode_; }
     LGFX_Sprite* loadSprite(const char* path, int w, int h,
                             uint16_t bgColor = TFT_BLACK);
 
@@ -31,7 +43,10 @@ private:
     LGFX_Sprite* currentBase_;
     LGFX_Sprite* currentOverlay_;
     ScreenOverlayCallback overlayCb_;
+    ResourceProvider* resources_;
+    ImageFitMode imageFitMode_;
     bool dirty_;
+    uint8_t rotation_;
     int width_;
     int height_;
 };

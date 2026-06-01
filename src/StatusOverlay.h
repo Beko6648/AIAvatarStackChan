@@ -29,6 +29,18 @@ struct StatusOverlayState {
     uint8_t minute;
 };
 
+struct StatusOverlayLayout {
+    int16_t clockX;
+    int16_t clockY;
+    textdatum_t clockDatum;
+    uint8_t clockTextSize;
+    UiRect micBounds;
+    UiRect networkBounds;
+    UiRect batteryBounds;
+    UiRect volumeTapBounds;
+    int16_t volumeIndicatorX;
+};
+
 class StatusOverlay {
 public:
     StatusOverlay();
@@ -37,22 +49,32 @@ public:
     bool enabled() const { return enabled_; }
     bool update(const StatusOverlayState& state);
     void draw(LGFX_Sprite* canvas) const;
-    UiRect micBounds() const { return {224, 0, 37, 37}; }
-    UiRect networkBounds() const { return {254, 0, 37, 37}; }
-    UiRect batteryBounds() const { return {288, 4, 28, 28}; }
-    UiRect volumeTapBounds() const { return {0, 190, 72, 50}; }
+    void setLayout(const StatusOverlayLayout& layout) { layout_ = layout; }
+    void setClockPosition(int16_t x, int16_t y, textdatum_t datum = top_left);
+    void setClockTextSize(uint8_t size) { layout_.clockTextSize = size; }
+    void setMicBounds(UiRect bounds) { layout_.micBounds = bounds; }
+    void setNetworkBounds(UiRect bounds) { layout_.networkBounds = bounds; }
+    void setBatteryBounds(UiRect bounds) { layout_.batteryBounds = bounds; }
+    void setVolumeTapBounds(UiRect bounds) { layout_.volumeTapBounds = bounds; }
+    void setVolumeIndicatorX(int16_t x) { layout_.volumeIndicatorX = x; }
+    const StatusOverlayLayout& layout() const { return layout_; }
+    UiRect micBounds() const { return layout_.micBounds; }
+    UiRect networkBounds() const { return layout_.networkBounds; }
+    UiRect batteryBounds() const { return layout_.batteryBounds; }
+    UiRect volumeTapBounds() const { return layout_.volumeTapBounds; }
 
 private:
     bool enabled_;
     bool hasState_;
     StatusOverlayState state_;
+    StatusOverlayLayout layout_;
 
     static bool equals(const StatusOverlayState& a, const StatusOverlayState& b);
-    static void drawClock(LGFX_Sprite* canvas, uint8_t hour, uint8_t minute);
-    static void drawBatteryIcon(LGFX_Sprite* canvas, int8_t level, bool charging);
-    static void drawWiFiIcon(LGFX_Sprite* canvas, bool wifiConnected, bool wsConnected);
-    static void drawMicIcon(LGFX_Sprite* canvas, bool muted);
-    static void drawVolumeIndicator(LGFX_Sprite* canvas, uint8_t level, uint8_t levelCount);
+    void drawClock(LGFX_Sprite* canvas, uint8_t hour, uint8_t minute) const;
+    void drawBatteryIcon(LGFX_Sprite* canvas, int8_t level, bool charging) const;
+    void drawWiFiIcon(LGFX_Sprite* canvas, bool wifiConnected, bool wsConnected) const;
+    void drawMicIcon(LGFX_Sprite* canvas, bool muted) const;
+    void drawVolumeIndicator(LGFX_Sprite* canvas, uint8_t level, uint8_t levelCount) const;
 };
 
 }  // namespace aiavatar
