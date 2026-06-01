@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
+#include <esp_heap_caps.h>
 #include <cmath>
 #include <cstring>
 #include <ctime>
@@ -101,6 +102,7 @@ bool AIAvatar::begin(const Config& config, const ResourceProvider& resources) {
         camera_.begin();
     }
     openClaw_.begin(display_, leds_);
+    openClaw_.preload();
     display_.onOverlay(AIAvatar::drawOverlayStatic);
 
     mic_.configure(config_.micSampleRate, config_.micMagnification, config_.micBufferSamples);
@@ -159,6 +161,7 @@ bool AIAvatar::begin(const Config& config, const ResourceProvider& resources) {
     xTaskCreatePinnedToCore(AIAvatar::wsTaskFunc, "AIAvatarWS",
                             config_.wsTaskStackSize, this, 1, &wsTaskHandle_,
                             config_.wsTaskCore);
+    logMemoryUsage("after begin");
     return true;
 }
 
@@ -693,6 +696,41 @@ void AIAvatar::drawVisionPreview(LGFX_Sprite* canvas) {
     if (visionPreviewMutex_) {
         xSemaphoreGive(visionPreviewMutex_);
     }
+}
+
+void AIAvatar::logMemoryUsage(const char* label) const {
+    size_t heapTotal = heap_caps_get_total_size(MALLOC_CAP_8BIT);
+    size_t heapFree = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+    size_t heapMinFree = heap_caps_get_minimum_free_size(MALLOC_CAP_8BIT);
+    size_t heapLargest = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+
+    size_t psramTotal = heap_caps_get_total_size(MALLOC_CAP_SPIRAM);
+    size_t psramFree = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+    size_t psramMinFree = heap_caps_get_minimum_free_size(MALLOC_CAP_SPIRAM);
+    size_t psramLargest = heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM);
+
+    auto usedPct = [](size_t total, size_t freeBytes) -> float {
+        return total > 0 ? 100.0f * static_cast<float>(total - freeBytes) /
+                               static_cast<float>(total)
+                         : 0.0f;
+    };
+
+    Serial.printf("[Memory] %s heap used=%uKB/%uKB %.1f%% free=%uKB minFree=%uKB largest=%uKB\n",
+                  label ? label : "",
+                  static_cast<unsigned>((heapTotal - heapFree) / 1024),
+                  static_cast<unsigned>(heapTotal / 1024),
+                  usedPct(heapTotal, heapFree),
+                  static_cast<unsigned>(heapFree / 1024),
+                  static_cast<unsigned>(heapMinFree / 1024),
+                  static_cast<unsigned>(heapLargest / 1024));
+    Serial.printf("[Memory] %s psram used=%uKB/%uKB %.1f%% free=%uKB minFree=%uKB largest=%uKB\n",
+                  label ? label : "",
+                  static_cast<unsigned>((psramTotal - psramFree) / 1024),
+                  static_cast<unsigned>(psramTotal / 1024),
+                  usedPct(psramTotal, psramFree),
+                  static_cast<unsigned>(psramFree / 1024),
+                  static_cast<unsigned>(psramMinFree / 1024),
+                  static_cast<unsigned>(psramLargest / 1024));
 }
 
 bool AIAvatar::hasSpeech(const int16_t* samples, size_t sampleCount) const {

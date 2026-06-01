@@ -11,7 +11,8 @@ namespace aiavatar {
 ScreenRenderer::ScreenRenderer()
     : canvas_(nullptr),
       currentBase_(nullptr),
-      currentOverlay_(nullptr),
+      currentOverlay_{nullptr, 0, 0, kTransparentColor},
+      currentOverlay2_{nullptr, 0, 0, kTransparentColor},
       overlayCb_(nullptr),
       resources_(nullptr),
       imageFitMode_(ImageFitMode::Contain),
@@ -129,6 +130,69 @@ LGFX_Sprite* ScreenRenderer::loadSprite(const char* path, int w, int h, uint16_t
     return sprite;
 }
 
+SpriteLayer ScreenRenderer::loadLayerSprite(const char* path, int w, int h,
+                                            uint16_t transparentColor) {
+    SpriteLayer layer{nullptr, 0, 0, transparentColor};
+    LGFX_Sprite* full = loadSprite(path, w, h, transparentColor);
+    if (!full) return layer;
+
+    int minX = w;
+    int minY = h;
+    int maxX = -1;
+    int maxY = -1;
+    for (int y = 0; y < h; ++y) {
+        for (int x = 0; x < w; ++x) {
+            if (full->readPixel(x, y) == transparentColor) continue;
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+        }
+    }
+
+    if (maxX < minX || maxY < minY) {
+        Serial.printf("[Display] layer empty after trim: %s\n", path);
+        delete full;
+        return layer;
+    }
+
+    int cropW = maxX - minX + 1;
+    int cropH = maxY - minY + 1;
+    auto* cropped = new LGFX_Sprite(&M5.Display);
+    if (!cropped) {
+        delete full;
+        return layer;
+    }
+    cropped->setColorDepth(16);
+    cropped->setPsram(true);
+    if (!cropped->createSprite(cropW, cropH)) {
+        Serial.printf("[Display] layer allocation failed: %s (%dx%d)\n",
+                      path, cropW, cropH);
+        delete cropped;
+        delete full;
+        return layer;
+    }
+
+    cropped->fillSprite(transparentColor);
+    full->pushSprite(cropped, -minX, -minY);
+    delete full;
+
+    size_t fullBytes = static_cast<size_t>(w) * h * 2;
+    size_t croppedBytes = static_cast<size_t>(cropW) * cropH * 2;
+    size_t savedBytes = fullBytes > croppedBytes ? fullBytes - croppedBytes : 0;
+    float savedRate = fullBytes > 0 ? (100.0f * savedBytes / fullBytes) : 0.0f;
+    Serial.printf("[Display] layer trimmed %s: %dx%d@%d,%d saved=%uKB/%uKB %.1f%%\n",
+                  path, cropW, cropH, minX, minY,
+                  static_cast<unsigned>(savedBytes / 1024),
+                  static_cast<unsigned>(fullBytes / 1024),
+                  savedRate);
+
+    layer.sprite = cropped;
+    layer.x = static_cast<int16_t>(minX);
+    layer.y = static_cast<int16_t>(minY);
+    return layer;
+}
+
 void ScreenRenderer::setBase(LGFX_Sprite* sprite) {
     if (currentBase_ == sprite) return;
     currentBase_ = sprite;
@@ -136,8 +200,28 @@ void ScreenRenderer::setBase(LGFX_Sprite* sprite) {
 }
 
 void ScreenRenderer::setOverlay(LGFX_Sprite* sprite) {
-    if (currentOverlay_ == sprite) return;
-    currentOverlay_ = sprite;
+    setOverlay({sprite, 0, 0, kTransparentColor});
+}
+
+void ScreenRenderer::setOverlay(const SpriteLayer& layer) {
+    if (currentOverlay_.sprite == layer.sprite &&
+        currentOverlay_.x == layer.x &&
+        currentOverlay_.y == layer.y &&
+        currentOverlay_.transparentColor == layer.transparentColor) {
+        return;
+    }
+    currentOverlay_ = layer;
+    dirty_ = true;
+}
+
+void ScreenRenderer::setOverlay2(const SpriteLayer& layer) {
+    if (currentOverlay2_.sprite == layer.sprite &&
+        currentOverlay2_.x == layer.x &&
+        currentOverlay2_.y == layer.y &&
+        currentOverlay2_.transparentColor == layer.transparentColor) {
+        return;
+    }
+    currentOverlay2_ = layer;
     dirty_ = true;
 }
 
@@ -150,8 +234,13 @@ void ScreenRenderer::update() {
     } else {
         canvas_->fillSprite(TFT_BLACK);
     }
-    if (currentOverlay_) {
-        currentOverlay_->pushSprite(canvas_, 0, 0, kTransparentColor);
+    if (currentOverlay_.sprite) {
+        currentOverlay_.sprite->pushSprite(canvas_, currentOverlay_.x, currentOverlay_.y,
+                                           currentOverlay_.transparentColor);
+    }
+    if (currentOverlay2_.sprite) {
+        currentOverlay2_.sprite->pushSprite(canvas_, currentOverlay2_.x, currentOverlay2_.y,
+                                            currentOverlay2_.transparentColor);
     }
     if (overlayCb_) overlayCb_(canvas_);
 

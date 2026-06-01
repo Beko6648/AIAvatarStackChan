@@ -162,6 +162,7 @@ private:
     void showVisionPreview(const uint8_t* jpgBuf, size_t jpgLen);
     void updateVisionPreview();
     void drawVisionPreview(LGFX_Sprite* canvas);
+    void logMemoryUsage(const char* label) const;
     uint8_t nearestVolumeLevel(uint8_t volume) const;
     bool hasSpeech(const int16_t* samples, size_t sampleCount) const;
     static bool readMicFrameStatic(int16_t* dest, void* context);
