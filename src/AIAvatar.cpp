@@ -233,6 +233,7 @@ bool AIAvatar::startPushToTalk() {
 void AIAvatar::endPushToTalk() {
     if (!pushToTalkActive_) return;
     pushToTalkActive_ = false;
+    visualEffects_.clearVoiceDetected();
 
     size_t samples = pttBufPos_;
     size_t minSamples = static_cast<size_t>(config_.pttMinSeconds * config_.micSampleRate);
@@ -319,8 +320,9 @@ void AIAvatar::runMicCapture() {
         if (mic_.read(micBuf, config_.micBufferSamples)) {
             if (pushToTalkActive_) {
                 if (hasSpeech(micBuf, config_.micBufferSamples)) {
-                    visualEffects_.showVoiceDetected(350);
-                    display_.setDirty();
+                    if (visualEffects_.showVoiceDetected(350)) {
+                        display_.setDirty();
+                    }
                 }
                 size_t pos = pttBufPos_;
                 if (pos + config_.micBufferSamples <= pttBufCapacity_) {
@@ -343,8 +345,9 @@ void AIAvatar::runMicCapture() {
             if (!micMuted_ && ws_.isConnected() && !serverProcessing_) {
                 uint32_t now = millis();
                 if (hasSpeech(micBuf, config_.micBufferSamples)) {
-                    visualEffects_.showVoiceDetected(350);
-                    display_.setDirty();
+                    if (visualEffects_.showVoiceDetected(350)) {
+                        display_.setDirty();
+                    }
                     if (speechDetectedCb_ && now - lastSpeechDetectedMs >= 300) {
                         lastSpeechDetectedMs = now;
                         speechDetectedCb_();

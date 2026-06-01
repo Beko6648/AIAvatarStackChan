@@ -11,9 +11,18 @@ VisualEffects::VisualEffects()
       voiceVisible_(false),
       glowShape_(ListeningGlowShape::Rectangle) {}
 
-void VisualEffects::showVoiceDetected(uint32_t durationMs) {
+bool VisualEffects::showVoiceDetected(uint32_t durationMs) {
+    bool wasVisible = voiceDetected();
     voiceDetectedUntilMs_ = millis() + durationMs;
     voiceVisible_ = true;
+    return !wasVisible;
+}
+
+bool VisualEffects::clearVoiceDetected() {
+    bool wasVisible = voiceVisible_;
+    voiceDetectedUntilMs_ = 0;
+    voiceVisible_ = false;
+    return wasVisible;
 }
 
 bool VisualEffects::update() {

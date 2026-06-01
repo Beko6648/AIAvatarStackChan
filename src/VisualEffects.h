@@ -14,7 +14,8 @@ class VisualEffects {
 public:
     VisualEffects();
 
-    void showVoiceDetected(uint32_t durationMs);
+    bool showVoiceDetected(uint32_t durationMs);
+    bool clearVoiceDetected();
     bool update();
     void draw(LGFX_Sprite* canvas) const;
     bool voiceDetected() const;
