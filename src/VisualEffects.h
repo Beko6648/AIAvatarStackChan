@@ -21,11 +21,17 @@ public:
     bool voiceDetected() const;
     void setListeningGlowShape(ListeningGlowShape shape) { glowShape_ = shape; }
     ListeningGlowShape listeningGlowShape() const { return glowShape_; }
+    void setCircularListeningGlowWidth(float width) { circularGlowWidth_ = width; }
+    void setCircularListeningGlowSeamlessGradient(bool enabled) {
+        seamlessCircularGlowGradient_ = enabled;
+    }
 
 private:
     uint32_t voiceDetectedUntilMs_;
     bool voiceVisible_;
     ListeningGlowShape glowShape_;
+    float circularGlowWidth_;
+    bool seamlessCircularGlowGradient_;
 
     void drawListeningBorder(LGFX_Sprite* canvas) const;
     void drawCircularListeningBorder(LGFX_Sprite* canvas) const;

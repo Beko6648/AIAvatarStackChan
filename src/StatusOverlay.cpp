@@ -14,6 +14,7 @@ StatusOverlay::StatusOverlay()
               {254, 0, 37, 37},
               {288, 4, 28, 28},
               28,
+              0,
               {0, 190, 72, 50},
               5},
       micTapBounds_(layout_.micBounds),
@@ -147,20 +148,27 @@ void StatusOverlay::drawWiFiIcon(LGFX_Sprite* canvas, bool wifiConnected, bool w
     else if (wsConnected) color = TFT_GREEN;
     else color = TFT_WHITE;
 
+    const int stroke = layout_.wifiStrokeRadius;
     for (int a = -50; a <= 50; ++a) {
         float rad = a * 3.14159f / 180.0f;
-        canvas->drawPixel(cx + static_cast<int>(s * 11 / 28 * sinf(rad)),
-                          by - static_cast<int>(s * 11 / 28 * cosf(rad)), color);
+        int px = cx + static_cast<int>(s * 11 / 28 * sinf(rad));
+        int py = by - static_cast<int>(s * 11 / 28 * cosf(rad));
+        if (stroke > 0) canvas->fillCircle(px, py, stroke, color);
+        else canvas->drawPixel(px, py, color);
     }
     for (int a = -50; a <= 50; ++a) {
         float rad = a * 3.14159f / 180.0f;
-        canvas->drawPixel(cx + static_cast<int>(s / 4 * sinf(rad)),
-                          by - static_cast<int>(s / 4 * cosf(rad)), color);
+        int px = cx + static_cast<int>(s / 4 * sinf(rad));
+        int py = by - static_cast<int>(s / 4 * cosf(rad));
+        if (stroke > 0) canvas->fillCircle(px, py, stroke, color);
+        else canvas->drawPixel(px, py, color);
     }
     for (int a = -50; a <= 50; ++a) {
         float rad = a * 3.14159f / 180.0f;
-        canvas->drawPixel(cx + static_cast<int>(s * 3 / 28 * sinf(rad)),
-                          by - static_cast<int>(s * 3 / 28 * cosf(rad)), color);
+        int px = cx + static_cast<int>(s * 3 / 28 * sinf(rad));
+        int py = by - static_cast<int>(s * 3 / 28 * cosf(rad));
+        if (stroke > 0) canvas->fillCircle(px, py, stroke, color);
+        else canvas->drawPixel(px, py, color);
     }
     canvas->fillCircle(cx, by, std::max(1, s / 28), color);
     if (!wifiConnected) {

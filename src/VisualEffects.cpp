@@ -9,7 +9,9 @@ namespace aiavatar {
 VisualEffects::VisualEffects()
     : voiceDetectedUntilMs_(0),
       voiceVisible_(false),
-      glowShape_(ListeningGlowShape::Rectangle) {}
+      glowShape_(ListeningGlowShape::Rectangle),
+      circularGlowWidth_(7.0f),
+      seamlessCircularGlowGradient_(false) {}
 
 bool VisualEffects::showVoiceDetected(uint32_t durationMs) {
     bool wasVisible = voiceDetected();
@@ -89,7 +91,7 @@ void VisualEffects::drawListeningBorder(LGFX_Sprite* canvas) const {
 void VisualEffects::drawCircularListeningBorder(LGFX_Sprite* canvas) const {
     const int w = canvas->width();
     const int h = canvas->height();
-    const float glowWidth = 7.0f;
+    const float glowWidth = circularGlowWidth_;
     const float cx = (w - 1) * 0.5f;
     const float cy = (h - 1) * 0.5f;
     const float radius = std::min(w, h) * 0.5f - 0.5f;
@@ -99,8 +101,15 @@ void VisualEffects::drawCircularListeningBorder(LGFX_Sprite* canvas) const {
     const int cB_r = 255, cB_g = 40, cB_b = 180;
 
     auto drawGlowPixel = [&](int x, int y, int alpha) {
-        float angle = atan2f(y - cy, x - cx) + 3.14159f;
-        int t = static_cast<int>(angle * 255.0f / (2.0f * 3.14159f));
+        int t;
+        if (seamlessCircularGlowGradient_) {
+            float dx = (w > 1) ? static_cast<float>(x) / static_cast<float>(w - 1) : 0.5f;
+            float dy = (h > 1) ? static_cast<float>(y) / static_cast<float>(h - 1) : 0.5f;
+            t = static_cast<int>((1.0f - dx) * 128.0f + dy * 127.0f);
+        } else {
+            float angle = atan2f(y - cy, x - cx) + 3.14159f;
+            t = static_cast<int>(angle * 255.0f / (2.0f * 3.14159f));
+        }
 
         int gr = cA_r + (cB_r - cA_r) * t / 255;
         int gg = cA_g + (cB_g - cA_g) * t / 255;

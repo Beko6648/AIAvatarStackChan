@@ -38,6 +38,7 @@ struct StatusOverlayLayout {
     UiRect networkBounds;
     UiRect batteryBounds;
     uint8_t iconSize;
+    uint8_t wifiStrokeRadius;
     UiRect volumeTapBounds;
     int16_t volumeIndicatorX;
 };
@@ -60,6 +61,7 @@ public:
     void setNetworkTapBounds(UiRect bounds);
     void setBatteryTapBounds(UiRect bounds);
     void setIconSize(uint8_t size) { layout_.iconSize = size; }
+    void setWifiStrokeRadius(uint8_t radius) { layout_.wifiStrokeRadius = radius; }
     void setVolumeTapBounds(UiRect bounds) { layout_.volumeTapBounds = bounds; }
     void setVolumeIndicatorX(int16_t x) { layout_.volumeIndicatorX = x; }
     const StatusOverlayLayout& layout() const { return layout_; }
