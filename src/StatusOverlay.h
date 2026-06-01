@@ -37,6 +37,7 @@ struct StatusOverlayLayout {
     UiRect micBounds;
     UiRect networkBounds;
     UiRect batteryBounds;
+    uint8_t iconSize;
     UiRect volumeTapBounds;
     int16_t volumeIndicatorX;
 };
@@ -52,15 +53,19 @@ public:
     void setLayout(const StatusOverlayLayout& layout) { layout_ = layout; }
     void setClockPosition(int16_t x, int16_t y, textdatum_t datum = top_left);
     void setClockTextSize(uint8_t size) { layout_.clockTextSize = size; }
-    void setMicBounds(UiRect bounds) { layout_.micBounds = bounds; }
-    void setNetworkBounds(UiRect bounds) { layout_.networkBounds = bounds; }
-    void setBatteryBounds(UiRect bounds) { layout_.batteryBounds = bounds; }
+    void setMicBounds(UiRect bounds);
+    void setNetworkBounds(UiRect bounds);
+    void setBatteryBounds(UiRect bounds);
+    void setMicTapBounds(UiRect bounds);
+    void setNetworkTapBounds(UiRect bounds);
+    void setBatteryTapBounds(UiRect bounds);
+    void setIconSize(uint8_t size) { layout_.iconSize = size; }
     void setVolumeTapBounds(UiRect bounds) { layout_.volumeTapBounds = bounds; }
     void setVolumeIndicatorX(int16_t x) { layout_.volumeIndicatorX = x; }
     const StatusOverlayLayout& layout() const { return layout_; }
-    UiRect micBounds() const { return layout_.micBounds; }
-    UiRect networkBounds() const { return layout_.networkBounds; }
-    UiRect batteryBounds() const { return layout_.batteryBounds; }
+    UiRect micBounds() const { return customMicTapBounds_ ? micTapBounds_ : layout_.micBounds; }
+    UiRect networkBounds() const { return customNetworkTapBounds_ ? networkTapBounds_ : layout_.networkBounds; }
+    UiRect batteryBounds() const { return customBatteryTapBounds_ ? batteryTapBounds_ : layout_.batteryBounds; }
     UiRect volumeTapBounds() const { return layout_.volumeTapBounds; }
 
 private:
@@ -68,6 +73,12 @@ private:
     bool hasState_;
     StatusOverlayState state_;
     StatusOverlayLayout layout_;
+    UiRect micTapBounds_;
+    UiRect networkTapBounds_;
+    UiRect batteryTapBounds_;
+    bool customMicTapBounds_;
+    bool customNetworkTapBounds_;
+    bool customBatteryTapBounds_;
 
     static bool equals(const StatusOverlayState& a, const StatusOverlayState& b);
     void drawClock(LGFX_Sprite* canvas, uint8_t hour, uint8_t minute) const;
