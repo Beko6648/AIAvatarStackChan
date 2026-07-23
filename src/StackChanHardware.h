@@ -28,6 +28,7 @@ public:
 private:
     bool active_;
     bool autoAngleSyncEnabled_;
+    uint32_t lastStackChanUpdateMs_;
 };
 
 }  // namespace aiavatar

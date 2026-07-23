@@ -15,6 +15,7 @@ namespace {
 
 static constexpr uint8_t kStackChanIoExpanderAddress = 0x6F;
 static constexpr uint8_t kStackChanVersionRegister = 0x02;
+static constexpr uint32_t kStackChanUpdateIntervalMs = 50;
 
 #if AIAVATAR_HAS_M5STACKCHAN
 bool detectStackChanHardware() {
@@ -28,7 +29,8 @@ bool detectStackChanHardware() {
 
 StackChanHardware::StackChanHardware()
     : active_(false),
-      autoAngleSyncEnabled_(false) {}
+      autoAngleSyncEnabled_(false),
+      lastStackChanUpdateMs_(0) {}
 
 bool StackChanHardware::begin() {
 #if AIAVATAR_HAS_M5STACKCHAN
@@ -42,6 +44,7 @@ bool StackChanHardware::begin() {
     // This can be enabled again from Config for smoother motion if the hardware
     // reads servo positions reliably.
     M5StackChan.Motion.setAutoAngleSyncEnabled(autoAngleSyncEnabled_);
+    lastStackChanUpdateMs_ = millis();
     active_ = true;
     Serial.printf("[StackChan] hardware initialized autoAngleSync=%d\n",
                   autoAngleSyncEnabled_ ? 1 : 0);
@@ -65,7 +68,13 @@ void StackChanHardware::setAutoAngleSyncEnabled(bool enabled) {
 
 void StackChanHardware::update() {
 #if AIAVATAR_HAS_M5STACKCHAN
-    if (active_) M5StackChan.update();
+    if (!active_) return;
+
+    uint32_t now = millis();
+    if (now - lastStackChanUpdateMs_ >= kStackChanUpdateIntervalMs) {
+        lastStackChanUpdateMs_ = now;
+        M5StackChan.update();
+    }
 #endif
 }
 
