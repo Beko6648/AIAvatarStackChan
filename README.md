@@ -68,6 +68,29 @@ cp config.sample.ja.json config.json   # or config.sample.json for English
 
 Put `config.json` and at least one avatar image (`/avatar/neutral.png`) on the SD card, then insert it into your StackChan. You can use the sample images in `examples/avatar/stackchan` to test it quickly.
 
+You can also place multiple resource profiles on one SD card. The standard `/config.json` and `/avatar` pair is treated as the `default` profile. Any matching `/<name>.json` and `/<name>` folder pair becomes a named profile:
+
+```text
+/config.json
+/avatar/neutral.png
+/kuroha.json
+/kuroha/neutral.png
+/miku.json
+/miku/neutral.png
+```
+
+Select a fixed profile before loading the config:
+
+```cpp
+if (resources.beginSD(GPIO_NUM_4)) {
+    resources.scanProfiles();
+    resources.selectProfile("kuroha");
+    resources.loadConfig(config);
+}
+```
+
+If only one profile is found, `scanProfiles()` selects it automatically.
+
 If you want to run without an SD card, create `Config` values in `main.cpp` and register optional built-in assets through `ResourceProvider`. SD files still take priority when an SD card is mounted.
 
 ```cpp
@@ -471,7 +494,7 @@ graph TD;
 | Module | Role |
 | --- | --- |
 | `Config` | Holds runtime settings and can load JSON from a stream or bytes. |
-| `ResourceProvider` | Resolves config/assets from SD first, then optional user-registered built-in assets. |
+| `ResourceProvider` | Resolves config/assets from SD first, supports SD resource profiles, then optional user-registered built-in assets. |
 | `MicrophoneInput` | Captures PCM audio from CoreS3 and queues frames for upload. |
 | `WebSocketClient` | Sends microphone frames and invoke requests, then receives server events and audio chunks. |
 | `SpeakerOutput` | Buffers and plays returned PCM audio. |
@@ -518,8 +541,65 @@ The hardware-dependent pieces are isolated behind `HardwareAdapter`, so the core
 
 We are aware of the following issues. Contributions are very welcome if you can help fix them.✨🙏✨
 
-- Servo instability: The head may occasionally jerk left or drop downward. This may vary from unit to unit. Setting `stackchan_auto_angle_sync` to `false` in `config.json` can solve it, but motion becomes less responsive.
+- Servo instability: The head may occasionally jerk left or drop downward. This may vary from unit to unit. Setting `stackchan_auto_angle_sync` to `false` in `config.json` can solve it, but motion becomes less responsive. To keep angle sync enabled, see the temporary StackChan-BSP workaround below.
 - Arduino IDE support: We would like to support Arduino IDE and similar environments so beginners (like me) can use this project more easily.
+
+### Temporary StackChan-BSP servo fallback
+
+With StackChan-BSP 1.0.1, a failed servo position read can be converted into an extreme angle before the value is clamped. This can make the head suddenly jerk left or downward. Until the upstream library handles invalid reads, you can keep `stackchan_auto_angle_sync` enabled and use the BSP's current internal animation angle only when `ReadPos()` fails.
+
+This fallback must be applied inside StackChan-BSP because its public motion API no longer exposes the raw read error. After PlatformIO has installed the dependencies, open:
+
+```text
+.pio/libdeps/<environment>/StackChan-BSP/src/M5StackChan.cpp
+```
+
+Replace `ScsServo::getCurrentAngle()` with:
+
+```cpp
+int getCurrentAngle() override
+{
+    int current_pos = _scs_bus.ReadPos(_config.id);
+    int read_error  = _scs_bus.getErr();
+    bool raw_valid  = read_error == 0 &&
+                      current_pos >= _config.rawPosLimit.x &&
+                      current_pos <= _config.rawPosLimit.y;
+
+    if (!raw_valid) {
+        int fallback_angle = uitk_intl::clamp(
+            Servo::getCurrentAngle(), getAngleLimit().x, getAngleLimit().y);
+        ++_position_read_fallback_count;
+        Serial.printf(
+            "[StackChan][position-fallback] servoId=%d count=%lu "
+            "uptimeMs=%lu raw=%d readError=%d fallbackAngle=%d\n",
+            _config.id,
+            static_cast<unsigned long>(_position_read_fallback_count),
+            static_cast<unsigned long>(millis()),
+            current_pos, read_error, fallback_angle);
+        return fallback_angle;
+    }
+
+    int angle = (current_pos - _zero_pos) * 5 * 10 / 16;
+    return uitk_intl::clamp(
+        angle, getAngleLimit().x, getAngleLimit().y);
+}
+```
+
+Also add this member to the private section of `ScsServo`:
+
+```cpp
+uint32_t _position_read_fallback_count = 0;
+```
+
+The log reports each fallback and its cumulative count for the current boot. Servo ID 1 is yaw and ID 2 is pitch:
+
+```text
+[StackChan][position-fallback] servoId=1 count=3 uptimeMs=1418611 raw=-1 readError=1 fallbackAngle=42
+```
+
+This workaround does not retry, so it adds no delay beyond the driver's existing read timeout. It prevents an invalid position from becoming an extreme angle, but it does not repair the underlying servo communication problem.
+
+Edits under `.pio` are temporary and will be lost if PlatformIO reinstalls the dependency or the directory is deleted. Reapply the patch when necessary, and remove it after an upstream StackChan-BSP release includes the fix. Upstream progress can be followed in [StackChan-BSP PR #5](https://github.com/m5stack/StackChan-BSP/pull/5).
 
 
 ## ❤️ Thanks
