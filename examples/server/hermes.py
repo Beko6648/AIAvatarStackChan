@@ -20,8 +20,9 @@ api_server (http://127.0.0.1:8000) or a remote instance.
 
 Environment variables:
   OPENAI_API_KEY     Required. Used by STT (Whisper) + main LLM + alphabet->kana TTS preproc.
-  HERMES_API_KEY     API key for the Hermes Agent endpoint (may be a dummy for local).
-  HERMES_BASE_URL    OpenAI-compatible base URL of Hermes Agent (e.g. http://127.0.0.1:8000).
+  HERMES_API_KEY     API key for the Hermes Agent api_server (the gateway API_SERVER_KEY).
+  HERMES_BASE_URL    OpenAI-compatible base URL of Hermes Agent, INCLUDING /v1.
+                     e.g. http://127.0.0.1:8642/v1  (default matches a tested Hermes).
 
 Also make sure VOICEVOX is running at http://127.0.0.1:50021 for Japanese speech.
 
@@ -47,10 +48,12 @@ logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(asctime)s : %(
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Hermes Agent endpoint (OpenAI-compatible). Point HERMES_BASE_URL at your own
-# Hermes Agent api_server, e.g. http://127.0.0.1:8000 (see hermes api_server docs).
+# Hermes Agent endpoint (OpenAI-compatible /v1). Point HERMES_BASE_URL at your own
+# Hermes Agent api_server, INCLUDING the /v1 path route — e.g. http://127.0.0.1:8642/v1
+# (the default below matches the tested-working Hermes api_server on this machine).
+# Verified: OpenClawTool(harness="hermes") round-trips through this URL correctly.
 HERMES_API_KEY = os.getenv("HERMES_API_KEY", "hermes")
-HERMES_BASE_URL = os.getenv("HERMES_BASE_URL", "http://127.0.0.1:8000")
+HERMES_BASE_URL = os.getenv("HERMES_BASE_URL", "http://127.0.0.1:8642/v1")
 
 SYSTEM_PROMPT_JP = """\
 あなたの名前はスタックチャン。四角くてかわいいデスクトップロボットだよ。
