@@ -188,6 +188,11 @@ llm = ChatGPTService(
     base_url=LLM_BASE_URL or None,      # "" or unset -> OpenAI
     system_prompt=SYSTEM_PROMPT_JP,     # <- Use SYSTEM_PROMPT_EN for English (upstream unchanged)
     model=LLM_MODEL,
+    # enable_tool_filtering=False: aiavatar 0.8.19 sends the OpenAI-only
+    # {"type":"allowed_tools",...} tool_choice for models NOT in (grok/gemini/claude).
+    # OpenCode GO's deepseek rejects that with 422. Disabling it lets the model use
+    # tools with default auto tool_choice (OpenCode GO only accepts none/auto/required).
+    enable_tool_filtering=False,
     voice_text_tag=["ack", "answer"],
     # debug=True
 )
