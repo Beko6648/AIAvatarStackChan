@@ -19,7 +19,10 @@ Hermes Agent runs wherever HERMES_BASE_URL points — e.g. your own local
 api_server (http://127.0.0.1:8000) or a remote instance.
 
 Environment variables:
-  OPENAI_API_KEY     Required. Used by STT (Whisper) + main LLM + alphabet->kana TTS preproc.
+  OPENAI_API_KEY     Required. Used by STT (Whisper) + alphabet->kana TTS preproc.
+  LLM_API_KEY        Key for the main LLM brain. Default falls back to OPENCODE_GO_API_KEY / OPENAI_API_KEY.
+  LLM_BASE_URL       OpenAI-compatible base URL of the main LLM brain (default https://opencode.ai/zen/go/v1).
+  LLM_MODEL          Main LLM model id (default deepseek-v4-flash).
   HERMES_API_KEY     API key for the Hermes Agent api_server (the gateway API_SERVER_KEY).
   HERMES_BASE_URL    OpenAI-compatible base URL of Hermes Agent, INCLUDING /v1.
                      e.g. http://127.0.0.1:8642/v1  (default matches a tested Hermes).
@@ -54,6 +57,14 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # Verified: OpenClawTool(harness="hermes") round-trips through this URL correctly.
 HERMES_API_KEY = os.getenv("HERMES_API_KEY", "hermes")
 HERMES_BASE_URL = os.getenv("HERMES_BASE_URL", "http://127.0.0.1:8642/v1")
+
+# Main conversation brain (OpenAI-compatible LLM).
+# Default: OpenCode GO (https://opencode.ai/zen/go/v1) + deepseek-v4-flash.
+# STT/TTS still use OPENAI_API_KEY; only the LLM brain is swappable here.
+# To fall back to plain OpenAI, set LLM_BASE_URL to "" and LLM_MODEL to "gpt-5.5".
+LLM_API_KEY = os.getenv("LLM_API_KEY") or os.getenv("OPENCODE_GO_API_KEY") or OPENAI_API_KEY
+LLM_BASE_URL = os.getenv("LLM_BASE_URL") or "https://opencode.ai/zen/go/v1"
+LLM_MODEL = os.getenv("LLM_MODEL") or "deepseek-v4-flash"
 
 SYSTEM_PROMPT_JP = """\
 あなたの名前はスタックチャン。四角くてかわいいデスクトップロボットだよ。
@@ -171,11 +182,12 @@ vad = SileroStreamSpeechDetector(
     # debug=True
 )
 
-# LLM
+# LLM (main conversation brain) — default: deepseek-v4-flash via OpenCode GO
 llm = ChatGPTService(
-    openai_api_key=OPENAI_API_KEY,
-    system_prompt=SYSTEM_PROMPT_JP,  # <- Use SYSTEM_PROMPT_EN for English
-    model="gpt-5.5",
+    openai_api_key=LLM_API_KEY or OPENAI_API_KEY,
+    base_url=LLM_BASE_URL or None,      # "" or unset -> OpenAI
+    system_prompt=SYSTEM_PROMPT_JP,     # <- Use SYSTEM_PROMPT_EN for English (upstream unchanged)
+    model=LLM_MODEL,
     voice_text_tag=["ack", "answer"],
     # debug=True
 )

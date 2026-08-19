@@ -58,17 +58,26 @@ as the autonomous task-execution agent for the robot, exactly as upstream's
 `examples/server/openclaw.py` does — but using the built-in `hermes` harness
 instead of OpenClaw.
 
-The main conversation brain stays `ChatGPTService` (OpenAI). When it decides a
-request needs external work (web search, data analysis, code execution, PC
-operations, ...), it delegates to Hermes Agent via `send_query_to_openclaw`.
-Point `HERMES_BASE_URL` at your own Hermes Agent `api_server` **including the
-`/v1` path** (e.g. `http://127.0.0.1:8642/v1`) for a fully self-hosted agent
-loop. Set `HERMES_API_KEY` to the gateway's `API_SERVER_KEY`.
+The main conversation brain is a `ChatGPTService` over any OpenAI-compatible
+endpoint — **by default the cheap `deepseek-v4-flash` via OpenCode GO**, with
+STT/TTS still on OpenAI/VOICEVOX. When the brain decides a request needs
+external work (web search, data analysis, code execution, PC operations, ...),
+it delegates to Hermes Agent via `send_query_to_openclaw`. Point
+`HERMES_BASE_URL` at your own Hermes Agent `api_server` **including the `/v1`
+path** (e.g. `http://127.0.0.1:8642/v1`) and set `HERMES_API_KEY` to the
+gateway's `API_SERVER_KEY`.
+
+The `SYSTEM_PROMPT_JP/EN` are **unchanged from upstream** — the long prompt is
+kept and works as-is with deepseek-v4-flash (long-context aware), including the
+`<ack>/<answer>` voice format and `<face.../>` expression tags.
 
 ```sh
-export OPENAI_API_KEY=sk-...
+export OPENAI_API_KEY=sk-...                          # STT (Whisper) + TTS preproc
+export LLM_API_KEY=<OpenCode GO or OpenAI key>        # main brain key (default: fallback OPENCODE_GO_API_KEY)
+export LLM_BASE_URL=https://opencode.ai/zen/go/v1     # main brain endpoint ("" = OpenAI)
+export LLM_MODEL=deepseek-v4-flash                    # main brain model ("" default gpt-5.5)
 export HERMES_API_KEY=<your Hermes API_SERVER_KEY>
-export HERMES_BASE_URL=http://127.0.0.1:8642/v1    # must include /v1
+export HERMES_BASE_URL=http://127.0.0.1:8642/v1       # must include /v1
 
 python -m uvicorn hermes:app --host 0.0.0.0 --port 8000
 ```
