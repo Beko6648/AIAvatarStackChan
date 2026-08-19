@@ -51,6 +51,31 @@ python -m uvicorn run:app --host 0.0.0.0 --port 8000
 
 For server-side details, see [uezo/aiavatarkit](https://github.com/uezo/aiavatarkit).
 
+#### 🤖 Hermes Agent integration
+
+This fork adds **Hermes Agent** ([nousresearch/hermes-agent](https://github.com/nousresearch/hermes-agent))
+as the autonomous task-execution agent for the robot, exactly as upstream's
+`examples/server/openclaw.py` does — but using the built-in `hermes` harness
+instead of OpenClaw.
+
+The main conversation brain stays `ChatGPTService` (OpenAI). When it decides a
+request needs external work (web search, data analysis, code execution, PC
+operations, ...), it delegates to Hermes Agent via `send_query_to_openclaw`.
+Point `HERMES_BASE_URL` at your own Hermes Agent `api_server` (e.g.
+`http://127.0.0.1:8000`) for a fully self-hosted agent loop.
+
+```sh
+export OPENAI_API_KEY=sk-...
+export HERMES_API_KEY=hermes              # dummy is fine for a local Hermes
+export HERMES_BASE_URL=http://127.0.0.1:8000
+
+python -m uvicorn hermes:app --host 0.0.0.0 --port 8000
+```
+
+`examples/server/hermes.py` is the only file this fork adds to upstream's server
+directory; everything else (`run.py`, `openclaw.py`, ...) is kept identical so
+the diff stays minimal and update-friendly.
+
 ### StackChan
 
 Create a PlatformIO project and copy the example into it.
