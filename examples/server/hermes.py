@@ -23,6 +23,8 @@ Environment variables:
   LLM_API_KEY        Key for the main LLM brain. Default falls back to OPENCODE_GO_API_KEY / OPENAI_API_KEY.
   LLM_BASE_URL       OpenAI-compatible base URL of the main LLM brain (default https://opencode.ai/zen/go/v1).
   LLM_MODEL          Main LLM model id (default deepseek-v4-flash).
+  TTS_SPEAKER        VOICEVOX speaker ID (default 47 = ナースロボタイプT・ノーマル).
+  VOICEVOX_URL       VOICEVOX engine URL (default http://127.0.0.1:50021).
   HERMES_API_KEY     API key for the Hermes Agent api_server (the gateway API_SERVER_KEY).
   HERMES_BASE_URL    OpenAI-compatible base URL of Hermes Agent, INCLUDING /v1.
                      e.g. http://127.0.0.1:8642/v1  (default matches a tested Hermes).
@@ -65,6 +67,7 @@ HERMES_BASE_URL = os.getenv("HERMES_BASE_URL", "http://127.0.0.1:8642/v1")
 LLM_API_KEY = os.getenv("LLM_API_KEY") or os.getenv("OPENCODE_GO_API_KEY") or OPENAI_API_KEY
 LLM_BASE_URL = os.getenv("LLM_BASE_URL") or "https://opencode.ai/zen/go/v1"
 LLM_MODEL = os.getenv("LLM_MODEL") or "deepseek-v4-flash"
+TTS_SPEAKER = int(os.getenv("TTS_SPEAKER") or "47")  # ナースロボタイプT・ノーマル
 
 SYSTEM_PROMPT_JP = """\
 あなたの名前はスタックチャン。四角くてかわいいデスクトップロボットだよ。
@@ -199,9 +202,9 @@ llm = ChatGPTService(
 
 # TTS
 tts = VoicevoxSpeechSynthesizer(
-    base_url="http://127.0.0.1:50021",
-    speaker=58,  # 猫使ビィ
-    cache_dir="ttscache/voicevox/58",
+    base_url=os.getenv("VOICEVOX_URL", "http://127.0.0.1:50021"),
+    speaker=TTS_SPEAKER,  # デフォルト=47(ナースロボタイプTノーマル), env:TTS_SPEAKERで切替
+    cache_dir="ttscache/voicevox/",
     preprocessors=[AlphabetToKanaPreprocessor(openai_api_key=OPENAI_API_KEY)],
     # debug=True
 )
