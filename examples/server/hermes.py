@@ -23,8 +23,6 @@ Environment variables:
   LLM_API_KEY        Key for the main LLM brain. Default falls back to OPENCODE_GO_API_KEY / OPENAI_API_KEY.
   LLM_BASE_URL       OpenAI-compatible base URL of the main LLM brain (default https://opencode.ai/zen/go/v1).
   LLM_MODEL          Main LLM model id (default deepseek-v4-flash).
-  TTS_SPEAKER        VOICEVOX speaker ID (default 47 = ナースロボタイプT・ノーマル).
-  VOICEVOX_URL       VOICEVOX engine URL (default http://127.0.0.1:50021).
   HERMES_API_KEY     API key for the Hermes Agent api_server (the gateway API_SERVER_KEY).
   HERMES_BASE_URL    OpenAI-compatible base URL of Hermes Agent, INCLUDING /v1.
                      e.g. http://127.0.0.1:8642/v1  (default matches a tested Hermes).
@@ -61,12 +59,12 @@ HERMES_API_KEY = os.getenv("HERMES_API_KEY", "hermes")
 HERMES_BASE_URL = os.getenv("HERMES_BASE_URL", "http://127.0.0.1:8642/v1")
 
 # Main conversation brain (OpenAI-compatible LLM).
-# Default: OpenCode GO (https://opencode.ai/zen/go/v1) + deepseek-v4-flash.
+# Default: Ollama Cloud (https://ollama.com/v1) + deepseek-v4-flash:0731.
 # STT/TTS still use OPENAI_API_KEY; only the LLM brain is swappable here.
 # To fall back to plain OpenAI, set LLM_BASE_URL to "" and LLM_MODEL to "gpt-5.5".
-LLM_API_KEY = os.getenv("LLM_API_KEY") or os.getenv("OPENCODE_GO_API_KEY") or OPENAI_API_KEY
-LLM_BASE_URL = os.getenv("LLM_BASE_URL") or "https://opencode.ai/zen/go/v1"
-LLM_MODEL = os.getenv("LLM_MODEL") or "deepseek-v4-flash"
+LLM_API_KEY = os.getenv("LLM_API_KEY") or os.getenv("OLLAMA_API_KEY") or os.getenv("OPENCODE_GO_API_KEY") or OPENAI_API_KEY
+LLM_BASE_URL = os.getenv("LLM_BASE_URL") or "https://ollama.com/v1"
+LLM_MODEL = os.getenv("LLM_MODEL") or "deepseek-v4-flash:0731"
 TTS_SPEAKER = int(os.getenv("TTS_SPEAKER") or "47")  # ナースロボタイプT・ノーマル
 
 SYSTEM_PROMPT_JP = """\
@@ -81,6 +79,13 @@ SYSTEM_PROMPT_JP = """\
 <ack>頷き・第一声の発話内容</ack>
  thinking思考内容 response
 <answer>応答本体</answer>
+
+### フォーマットの厳守（必須）
+
+- **必ず `<answer>` と `</answer>` の開始・終了タグの両方を出力すること。** どちらかが欠けると応答が無視される。
+- `<ack>` と `<answer>` はそれぞれ開始タグと終了タグを必ずセットで閉じる。
+- `<face name="..."/>` は自己完結タグ（`<face ...>` を閉じる `</face>` は不要）。`<face>` と `<answer>` の開始タグを省略しないこと。
+- 出力は必ず `<ack>...</ack>` から始め、応答本体を必ず `<answer>...</answer>` で囲む。`</answer>` だけで閉じない（`<answer>` 開始タグを省略しない）。
 
 ### 内容
 

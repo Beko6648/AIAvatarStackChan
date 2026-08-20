@@ -43,3 +43,6 @@ __pycache__
 recorded_voices
 ttscache
 *.db
+
+# 実設定（WiFiパスワード含む）はコミットしない
+config.json
